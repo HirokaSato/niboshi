@@ -54,32 +54,44 @@ public class NiboshiController {
 	// 駅名で検索するとURLを表示する。
 	@EventMapping
 	public Message handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException {
+		//クライアントが送ったパラメータと煮干しのワードをいれて検索するURL
 		String url = "https://ramendb.supleks.jp/search?q=" + event.getMessage().getText() + "++煮干&state=&order=point";
+		//検索結果のブラウザ情報を取得
 		Document document = Jsoup.connect(url).get();
+		//ラーメンのお店の名前をelementsに代入
 		String elements = document.getElementsByClass("name").select("h4").text();
+		
 		if (elements.isEmpty()) {
+			//elementsが空だった場合
 			return new TextMessage("おっと！" + event.getMessage().getText() + "には煮干しラーメンはないみたいだ！\n残念だが他の駅で探してみてくれ");
 		} else {
+			//elemsntsがあった場合
+			//カルーセルコラム型のリスト：columnsにcreateClumns(document)を代入				
 			List<CarouselColumn> columns = createColumns(document);
 			CarouselTemplate template = new CarouselTemplate(columns);
 			return new TemplateMessage("template", template);
 		}
 	}
-
+	
+		
 	public List<CarouselColumn> createColumns(Document document) throws IOException {
+		//カルーセルコラム型リストのcolumnsにarraylistを新しくインスタンス
 		List<CarouselColumn> columns = new ArrayList<>();
+		//element型のリストに写真、店名、点数、urlをそれぞれ代入
 		List<Element> images = document.getElementsByClass("photo").select("img");
 		List<Element> titles = document.getElementsByClass("name").select("h4");
 		List<Element> point = document.getElementsByClass("point-val");
 		List<Element> urls = document.getElementsByClass("bglink");
-
+		//String型のリストに写真、店名、点数、urlをそれぞれ代入
 		List<String> imageList = new ArrayList<>();
 		List<String> titleList = new ArrayList<>();
 		List<String> pointList = new ArrayList<>();
+		//Action型のリスト：actionlistにarraylistをインスタンス
 		List<List<Action>> actionList = new ArrayList<>();
 
 		int num = 5;
 		if (num < titles.size()) {
+			//もし検索結果が5件以上あった場合は5件
 			for (int i = 0; i < num; i++) {
 				titleList.add(titles.get(i).text());
 				imageList.add(images.get(i).attr("src"));
@@ -89,6 +101,7 @@ public class NiboshiController {
 				actionList.add(actions);
 			}
 		} else {
+			//検索結果が5件未満の場合が全件表示
 			for (int i = 0; i < titles.size(); i++) {
 				titleList.add(titles.get(i).text());
 				imageList.add(images.get(i).attr("src"));
